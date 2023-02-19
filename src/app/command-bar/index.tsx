@@ -265,7 +265,6 @@ const MyCommandBar: FunctionComponent<MyCommandBarProps> = ({
                 <InfoCallout
                     onDismiss={() => setShowInfo(false)}
                     target=".commandbar-info-button"
-                    showFooter
                 />
             )}
         </ThemeProvider>

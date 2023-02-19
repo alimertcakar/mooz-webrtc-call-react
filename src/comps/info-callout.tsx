@@ -37,11 +37,9 @@ const callout = mergeStyleSets({
     },
 })
 
-interface MyCalloutProps {
-    showFooter?: boolean
-}
 
-const MyCallout: FunctionComponent<ICalloutProps & MyCalloutProps> = ({ showFooter, ...props }) => {
+
+const MyCallout: FunctionComponent<ICalloutProps & MyCalloutProps> = ({  ...props }) => {
     const room = useRecoilValue(roomState)
     const link = `${window.location.origin}/room/${room?.id}`
     return (
@@ -63,27 +61,6 @@ const MyCallout: FunctionComponent<ICalloutProps & MyCalloutProps> = ({ showFoot
                 You can invite people directly to this chat by sharing this link{' '}
                 <Label>{link}</Label>
             </div>
-            {showFooter && (
-                <div className={callout.footer}>
-                    <span>
-                        Mooz by{' '}
-                        <Link
-                            href="https://github.com/muzam1l"
-                            target="_blank"
-                            rel="nofollow noreferrer noopener"
-                        >
-                            muzam1l
-                        </Link>
-                    </span>
-                    <Link
-                        href="https://github.com/muzam1l/mooz"
-                        target="_blank"
-                        rel="nofollow noreferrer noopener"
-                    >
-                        Fork me on GitHub
-                    </Link>
-                </div>
-            )}
         </Callout>
     )
 }
