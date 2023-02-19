@@ -5,8 +5,8 @@ import NodeCache from 'node-cache'
 
 const IO_OPTIONS = {
     cors: {
-        origin:"*",
-        credentials: false,
+        origin:"https://akimeet.netlify.app",
+        credentials: true,
     },
 }
 
