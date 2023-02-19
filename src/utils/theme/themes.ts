@@ -52,7 +52,7 @@ export const darkPalette: PartialTheme = {
         neutralPrimary: '#ffffff',
         neutralDark: '#f4f4f4',
         black: '#f8f8f8',
-        white: '#2c2c2c',
+        white: '#293245',
     },
 }
 
