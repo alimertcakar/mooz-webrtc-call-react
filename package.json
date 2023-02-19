@@ -2,7 +2,7 @@
     "name": "mooz",
     "version": "1.0.0",
     "private": true,
-    "proxy": "https://meet-n2rb.onrender.com",
+    "proxy": "http://localhost:5001",
     "engines": {
         "node": ">=14"
     },
