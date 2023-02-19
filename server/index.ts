@@ -6,7 +6,7 @@ import NodeCache from 'node-cache'
 const IO_OPTIONS = {
     cors: {
         origin:"*",
-        credentials: true,
+        credentials: false,
     },
 }
 
