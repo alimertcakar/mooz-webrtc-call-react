@@ -1,5 +1,14 @@
 import { keyframes, mergeStyles } from '@fluentui/react'
 
+export const parentContainer = mergeStyles({
+    display: 'flex',
+})
+export const divRooms = mergeStyles({
+    display: 'flex',
+    padding: 15,
+    flexBasis: '25%',
+    alignItems: 'center',
+})
 export const mb2 = mergeStyles({
     marginBottom: '.5em',
 })
@@ -10,6 +19,7 @@ export const mr4 = mergeStyles({
 export const container = mergeStyles({
     height: '100vh',
     overflowY: 'auto',
+    flexBasis: '40%',
 })
 export const containerInner = mergeStyles({
     margin: 'auto',

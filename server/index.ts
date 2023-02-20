@@ -2,10 +2,11 @@ import { createServer } from 'http'
 import { Server, Socket } from 'socket.io'
 import { nanoid } from 'nanoid'
 import NodeCache from 'node-cache'
+import { RoomEvents } from './features/room/model/room.model'
 
 const IO_OPTIONS = {
     cors: {
-        origin:"https://akimeet.netlify.app",
+        origin: 'https://akimeet.netlify.app',
         credentials: true,
     },
 }
@@ -14,10 +15,7 @@ const httpServer = createServer()
 const io = new Server(httpServer, IO_OPTIONS)
 
 const roomsCache = new NodeCache({
-    /*
-     12 hours expiry. 
-     It is long enough to last for any meeting (too long) and shoudn't be needed normally, just for the case i fuck up somewhere
-    */
+    // 12h
     stdTTL: 43200,
 })
 
@@ -34,28 +32,33 @@ interface Person {
     sessionId: string
 }
 
+type Rooms = Room[]
+
 io.on('connection', (socket: Socket) => {
     console.log('socket connected', socket.id)
 
-    socket.on('register', ({ sessionId, roomId }: { sessionId: string; roomId?: string }) => {
-        roomsCache.set<Person>(socket.id, { sessionId })
+    socket.on(
+        RoomEvents.Register,
+        ({ sessionId, roomId }: { sessionId: string; roomId?: string }) => {
+            roomsCache.set<Person>(socket.id, { sessionId })
 
-        /**
+            /**
          socket joins room with same session id
          This allows for extra layer above socket id so client just communicates with session id
         */
-        socket.join(sessionId)
+            socket.join(sessionId)
 
-        // join rooms person is already in
-        if (roomId) {
-            socket.join(roomId)
-            io.to(roomId).emit('person_reconnected', {
-                sessionId,
-            })
-        }
-    })
+            // join rooms person is already in
+            if (roomId) {
+                socket.join(roomId)
+                io.to(roomId).emit('person_reconnected', {
+                    sessionId,
+                })
+            }
+        },
+    )
 
-    socket.on('create_room', (room: Room, cb) => {
+    socket.on(RoomEvents.CreateRoom, (room: Room, cb) => {
         try {
             // TODO anonymous auth and/or rate limiting
             const roomId = nanoid()
@@ -63,6 +66,10 @@ io.on('connection', (socket: Socket) => {
 
             socket.join(roomId)
             roomsCache.set<Room>(roomId, room)
+            // TODO important : also delete room when everybody leaves
+            addRoom(room)
+
+            console.log(room, 'room')
             io.to(socket.id).emit('joined_room', room)
 
             cb({ isError: false })
@@ -72,7 +79,11 @@ io.on('connection', (socket: Socket) => {
         }
     })
 
-    socket.on('join_room', async (opts, cb) => {
+    socket.on(RoomEvents.GetRoomsList, async (opts, cb) => {
+        socket.emit('response_get_rooms_list', roomsCache.get<Rooms>('rooms'))
+    })
+
+    socket.on(RoomEvents.JoinRoom, async (opts, cb) => {
         try {
             const { name, link } = opts
             const room = getRoomFromLink(link)
@@ -106,7 +117,7 @@ io.on('connection', (socket: Socket) => {
         }
     })
 
-    socket.on('leave_room', () => {
+    socket.on(RoomEvents.LeaveRoom, () => {
         try {
             socket.rooms.forEach(room => {
                 const { sessionId } = roomsCache.get<Person>(socket.id) || {}
@@ -126,6 +137,7 @@ io.on('connection', (socket: Socket) => {
                         if (sockets.size === 0) {
                             // room is now empty, clear the memory reference
                             roomsCache.del(room)
+                            deleteRoomById(room)
                         }
                     })
             })
@@ -135,7 +147,7 @@ io.on('connection', (socket: Socket) => {
     })
 
     // Peer reports that the person left
-    socket.on('person_left', ({ sessionId }: { sessionId: string }) => {
+    socket.on(RoomEvents.PersonLeft, ({ sessionId }: { sessionId: string }) => {
         try {
             io.to(sessionId).emit('leave_room')
             socket.rooms.forEach(room => {
@@ -188,18 +200,11 @@ function getRoomFromLink(link: string): Room | undefined {
     let id: string | undefined
     try {
         const url = new URL(link) // throws if url is invalid
-        /* This does not care about url host so any host is valid as long as that follows below pathname pattern
-           /room/<room_id>
-           room_id regex = ([A-Za-z0-9_-])+ (same as nanoid character set)
-        */
         id = url.pathname.match(PATH_REGEX)?.groups?.id
     } catch (error) {
         // try link as id
         id = link.match(ID_REGEX)?.groups?.id
     }
-
-    // if (!id) throw Error('Cannot parse room id')
-    // if (!roomsCache.has(id)) throw Error('Room not found')
 
     return id !== undefined ? roomsCache.get(id) : undefined
 }
@@ -207,3 +212,19 @@ function getRoomFromLink(link: string): Room | undefined {
 httpServer.listen(process.env.PORT || 5001, () => {
     console.log('listening on port', process.env.PORT || 5001)
 })
+
+const uniqueById = (arr: any) => [...new Map(arr.map((item: any) => [item['id'], item])).values()]
+
+function addRoom(newRoom: Room) {
+    const rooms = roomsCache.get<Rooms>('rooms') || []
+    // @ts-ignore
+    const newRooms: Rooms = uniqueById([...rooms, newRoom])
+    roomsCache.set<Rooms>('rooms', newRooms)
+}
+
+function deleteRoomById(roomId: string) {
+    const rooms = roomsCache.get<Rooms>('rooms') || []
+    // @ts-ignore
+    const newRooms: Rooms = rooms.filter(room => room.id != roomId)
+    roomsCache.set<Rooms>('rooms', newRooms)
+}
