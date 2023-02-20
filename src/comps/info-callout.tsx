@@ -37,9 +37,7 @@ const callout = mergeStyleSets({
     },
 })
 
-
-
-const MyCallout: FunctionComponent<ICalloutProps & MyCalloutProps> = ({  ...props }) => {
+const MyCallout = ({ ...props }) => {
     const room = useRecoilValue(roomState)
     const link = `${window.location.origin}/room/${room?.id}`
     return (
