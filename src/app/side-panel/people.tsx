@@ -147,17 +147,7 @@ const PeoplePanel: FunctionComponent = () => {
     )
     return (
         <Stack verticalAlign="center" className={vFluid}>
-            {!connections.length ? (
-                <div className={message}>
-                    <span>You are currently alone right now, invite some people to join</span>
-                    <DefaultButton
-                        onClick={() => setShowInfo(!showInfo)}
-                        text="Info"
-                        className="info-button-in-person-list"
-                        style={{ marginTop: '.5em' }}
-                    />
-                </div>
-            ) : (
+            {!connections.length ? null : (
                 <Stack className={vFluid} horizontalAlign="center">
                     <DefaultButton
                         onClick={() => setShowInfo(!showInfo)}
