@@ -117,34 +117,9 @@ io.on('connection', (socket: Socket) => {
         }
     })
 
-    socket.on(RoomEvents.LeaveRoom, () => {
-        try {
-            socket.rooms.forEach(room => {
-                const { sessionId } = roomsCache.get<Person>(socket.id) || {}
+    socket.on('disconnect', () => onLeaveRoom(socket))
 
-                if (room === socket.id || room === sessionId) return
-
-                socket.leave(room)
-
-                if (sessionId) {
-                    socket.to(room).emit('person_left', {
-                        sessionId,
-                    })
-                }
-                io.in(room)
-                    .allSockets()
-                    .then(sockets => {
-                        if (sockets.size === 0) {
-                            // room is now empty, clear the memory reference
-                            roomsCache.del(room)
-                            deleteRoomById(room)
-                        }
-                    })
-            })
-        } catch (err) {
-            console.error('Error leaving room 😂', err)
-        }
-    })
+    socket.on(RoomEvents.LeaveRoom, () => onLeaveRoom(socket))
 
     // Peer reports that the person left
     socket.on(RoomEvents.PersonLeft, ({ sessionId }: { sessionId: string }) => {
@@ -227,4 +202,33 @@ function deleteRoomById(roomId: string) {
     // @ts-ignore
     const newRooms: Rooms = rooms.filter(room => room.id != roomId)
     roomsCache.set<Rooms>('rooms', newRooms)
+}
+
+const onLeaveRoom = (socket: Socket) => {
+    try {
+        socket.rooms.forEach(room => {
+            const { sessionId } = roomsCache.get<Person>(socket.id) || {}
+
+            if (room === socket.id || room === sessionId) return
+
+            socket.leave(room)
+
+            if (sessionId) {
+                socket.to(room).emit('person_left', {
+                    sessionId,
+                })
+            }
+            io.in(room)
+                .allSockets()
+                .then(sockets => {
+                    if (sockets.size === 0) {
+                        // room is now empty, clear the memory reference
+                        roomsCache.del(room)
+                        deleteRoomById(room)
+                    }
+                })
+        })
+    } catch (err) {
+        console.error('Error leaving room 😂', err)
+    }
 }
