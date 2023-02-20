@@ -202,7 +202,7 @@ export const useDisplayMedia = (): DisplayMediaReturn => {
         } catch (err) {
             toast('Error stopping screen capture!', { type: ToastType.error })
             // eslint-disable-next-line no-console
-            console.error(err);
+            console.error(err)
         }
     }, [displayMedia, setDisplayMedia])
 

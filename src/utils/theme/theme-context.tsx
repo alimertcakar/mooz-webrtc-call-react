@@ -12,7 +12,7 @@ const ThemeContext = createContext<ThemeType>('light') // default shouldn't matt
 const Provider: FunctionComponent = props => {
     // default preference - changed to dark
     const prefersDark = true
-        // window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+    // window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
 
     const [theme, setTheme] = useState<ThemeType>(prefersDark ? 'dark' : 'light')
 

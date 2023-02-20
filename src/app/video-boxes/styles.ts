@@ -45,8 +45,8 @@ export const modalStyles: Partial<IModalStyles> = {
         display: 'flex',
     },
     scrollableContent: {
-        overflow: "hidden"
-    }
+        overflow: 'hidden',
+    },
 }
 
 export const pinnedContainer = mergeStyles({
