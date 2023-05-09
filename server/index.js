@@ -1,5 +1,6 @@
 const fs = require('fs')
 const { WebSocketServer } = require('ws')
+const child_process = require('child_process')
 
 const https = require('https')
 
@@ -10,14 +11,78 @@ const server = https.createServer({
 
 const wss = new WebSocketServer({ server })
 
-wss.on('connection', function connection(ws) {
-    ws.on('error', console.error)
+wss.on('connection', (ws, req) => {
+    console.log('On connection')
+    ws.send('Server hello')
 
-    ws.on('message', function message(data) {
-        console.log('received: %s', data.slice(0, 25))
+    const rtmpUrl = 'rtmp://global-live.mux.com:5222/app/2b11f85c-f649-3819-6a47-0567451a4455'
+    const videoCodec = true
+        ? ['-c:v', 'copy']
+        : [
+              '-c:v',
+              'libx264',
+              '-preset',
+              'veryfast',
+              //   '-flvflags',
+              //   'no_duration_filesize',
+              '-tune',
+              'zerolatency',
+              '-vf',
+              'scale=w=-2:0',
+          ]
+    const audioCodec = true ? ['-c:a', 'copy'] : ['-c:a', 'aac', '-ar', '44100', '-b:a', '64k']
+    const ffmpeg = child_process.spawn('ffmpeg', [
+        '-i',
+        '-',
+        //force to overwrite
+        '-y',
+        // used for audio sync
+        '-use_wallclock_as_timestamps',
+        '1',
+        '-async',
+        '1',
+        ...videoCodec,
+        ...audioCodec,
+        //'-filter_complex', 'aresample=44100', // resample audio to 44100Hz, needed if input is not 44100
+        //'-strict', 'experimental',
+        '-bufsize',
+        '1000',
+        '-f',
+        'flv',
+        rtmpUrl,
+    ])
+
+    ffmpeg.on('close', (code, signal) => {
+        console.log('FFmpeg child process DIED!, code ' + code + ', signal ' + signal)
+        ws.terminate()
     })
 
-    ws.send('Server hello')
+    // Handle STDIN pipe errors by logging to the console.
+    // These errors most commonly occur when FFmpeg closes and there is still
+    // data to write.f If left unhandled, the server will crash.
+    ffmpeg.stdin.on('error', e => {
+        console.log('FFmpeg STDIN Error', e)
+    })
+
+    // FFmpeg outputs all of its messages to STDERR. Let's log them to the console.
+    ffmpeg.stderr.on('data', data => {
+        ws.send('ffmpeg got some data')
+        console.log('FFmpeg STDERR:', data.toString())
+    })
+
+    ws.on('message', msg => {
+        if (Buffer.isBuffer(msg)) {
+            console.log('(StreamData)')
+            ffmpeg.stdin.write(msg)
+        } else {
+            console.log('other msg received', msg)
+        }
+    })
+
+    ws.on('close', e => {
+        console.log('Socket closed')
+        ffmpeg.kill('SIGINT')
+    })
 })
 
 server.listen(6000)
