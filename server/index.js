@@ -4,7 +4,7 @@ const { WebSocketServer } = require('ws')
 const https = require('https')
 
 const server = https.createServer({
-    cert: fs.readFileSync('localcert.cert'), //what ever you're files are called
+    cert: fs.readFileSync('localcert.cert'),
     key: fs.readFileSync('localkey.key'),
 })
 
@@ -14,10 +14,10 @@ wss.on('connection', function connection(ws) {
     ws.on('error', console.error)
 
     ws.on('message', function message(data) {
-        console.log('received: %s', data)
+        console.log('received: %s', data.slice(0, 25))
     })
 
     ws.send('Server hello')
 })
 
-server.listen(3000)
+server.listen(6000)
