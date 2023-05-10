@@ -16,21 +16,18 @@ wss.on('connection', (ws, req) => {
     ws.send('Server hello')
 
     const rtmpUrl = 'rtmp://global-live.mux.com:5222/app/2b11f85c-f649-3819-6a47-0567451a4455'
-    const videoCodec = true
-        ? ['-c:v', 'copy']
-        : [
-              '-c:v',
-              'libx264',
-              '-preset',
-              'veryfast',
-              //   '-flvflags',
-              //   'no_duration_filesize',
-              '-tune',
-              'zerolatency',
-              '-vf',
-              'scale=w=-2:0',
-          ]
-    const audioCodec = true ? ['-c:a', 'copy'] : ['-c:a', 'aac', '-ar', '44100', '-b:a', '64k']
+    const videoCodec = [
+        '-c:v',
+        'libx264',
+        '-preset',
+        'veryfast',
+        '-tune',
+        'zerolatency',
+        '-vf',
+        'scale=w=-2:0',
+    ]
+    const audioCodec = ['-c:a', 'aac', '-ar', '44100', '-b:a', '64k']
+
     const ffmpeg = child_process.spawn('ffmpeg', [
         '-i',
         '-',
@@ -48,13 +45,14 @@ wss.on('connection', (ws, req) => {
         '-bufsize',
         '1000',
         '-f',
+        // "fifo", " -fifo_format " ,"flv", "-map", "0:v", "-map", "0:a", "-attempt_recovery", "1", "-max_recovery_attempts", "20", "-recover_any_error", "1", "-tag:v", "7", "-tag:a", "10", "-recovery_wait_time", "5" ,
         'flv',
         rtmpUrl,
     ])
 
     ffmpeg.on('close', (code, signal) => {
         console.log('FFmpeg child process DIED!, code ' + code + ', signal ' + signal)
-        ws.terminate()
+        // ws.terminate()
     })
 
     // Handle STDIN pipe errors by logging to the console.
@@ -66,7 +64,6 @@ wss.on('connection', (ws, req) => {
 
     // FFmpeg outputs all of its messages to STDERR. Let's log them to the console.
     ffmpeg.stderr.on('data', data => {
-        ws.send('ffmpeg got some data')
         console.log('FFmpeg STDERR:', data.toString())
     })
 
@@ -80,8 +77,8 @@ wss.on('connection', (ws, req) => {
     })
 
     ws.on('close', e => {
-        console.log('Socket closed')
-        ffmpeg.kill('SIGINT')
+        // console.log('Socket closed')
+        // ffmpeg.kill('SIGINT')
     })
 })
 
