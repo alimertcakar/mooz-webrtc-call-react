@@ -45,7 +45,6 @@ wss.on('connection', (ws, req) => {
         '-bufsize',
         '1000',
         '-f',
-        // "fifo", " -fifo_format " ,"flv", "-map", "0:v", "-map", "0:a", "-attempt_recovery", "1", "-max_recovery_attempts", "20", "-recover_any_error", "1", "-tag:v", "7", "-tag:a", "10", "-recovery_wait_time", "5" ,
         'flv',
         '-timeout',
         '0',
@@ -56,7 +55,7 @@ wss.on('connection', (ws, req) => {
         '-reconnect_streamed',
         '1',
         '-reconnect_delay_max',
-        '9999',
+        '5',
         rtmpUrl,
     ])
 
